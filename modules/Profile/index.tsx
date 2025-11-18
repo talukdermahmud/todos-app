@@ -50,14 +50,14 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-4xl 2xl:max-w-7xl mx-auto mb-10">
       <div className="bg-white rounded-3xl shadow-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8 relative inline-block before:absolute before:bottom-0 before:left-1 before:w-2/3 before:h-0.5 before:bg-[#5272FF]">
           Account Information
         </h1>
         {/* Avatar Upload */}
-        <div className="grid grid-cols-1 lg:grid-cols-3!">
-          <div className="flex items-center gap-6 mb-10 border border-[#A1A3ABA1] p-3 rounded-xl col-span-3 md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3">
+          <div className="flex items-center gap-6 mb-10 border border-[#A1A3ABA1] p-3 rounded-xl  md:col-span-1">
             <div className="relative">
               <div className="w-32 h-32 bg-gray-300 rounded-full overflow-hidden">
                 <Image
@@ -83,7 +83,7 @@ export default function ProfilePage() {
                 />
               </label>
             </div>
-            <label className="flex items-center gap-2 bg-[#5272FF] text-white px-5 py-3 rounded-xl cursor-pointer hover:bg-[#5286EF] transition">
+            <label className="flex items-center gap-2 bg-[#5272FF] text-white px-5 py-3 rounded-xl cursor-pointer whitespace-nowrap hover:bg-[#5286EF] transition">
               <Upload className="w-5 h-5" />
               Upload New Photo
               <input
@@ -96,8 +96,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          <div className="space-y-8 border border-[#A1A3ABA1] py-4 px-8 rounded-xl lg:col-span-1 xl:col-span-1">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-3 border border-[#A1A3ABA1] py-4 px-8 rounded-xl lg:col-span-1 xl:col-span-1">
             {/* First & Last Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -203,13 +203,13 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#5272FF] hover:bg-[#5286EF] w-[200px] h-10 text-white font-semibold flex items-center justify-center px-8 py-3 rounded-xl transition disabled:opacity-70"
+                className="bg-[#5272FF] hover:bg-[#5286EF] w-[200px]! h-10 text-white font-semibold flex items-center justify-center px-8 py-3 rounded-xl transition disabled:opacity-70"
               >
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </button>
               <button
                 type="button"
-                className="bg-[#8CA3CD] hover:bg-gray-500 w-[200px] h-10 text-white font-semibold px-8 py-3 rounded-xl transition flex items-center justify-center"
+                className="bg-[#8CA3CD] hover:bg-gray-500 w-[200px]! h-10 text-white font-semibold px-8 py-3 rounded-xl transition flex items-center justify-center"
               >
                 Cancel
               </button>
