@@ -88,9 +88,9 @@ export default function AddTaskModal({
               {(["extreme", "moderate", "low"] as const).map((priority) => (
                 <label
                   key={priority}
-                  className="flex items-center gap-2 cursor-pointer"
+                  className="flex items-center gap-3 cursor-pointer"
                 >
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-2!">
                     <span
                       className={`w-2 h-2 ${PriorityColors[priority].dot} rounded-full`}
                     ></span>
