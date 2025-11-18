@@ -1,53 +1,150 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar as CalendarIcon, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import {
+  useGetMeQuery,
+  useUpdateMeMutation,
+  useUpdateProfileImageMutation,
+} from "../../lib/api";
 import { ProfileFormData, profileSchema } from "../../lib/userSchemas";
-import formatDate from "../../utils/DateFormater";
+import { useToaster } from "../../components/Toaster";
 
 export default function ProfilePage() {
+  const { showToast } = useToaster();
   const [avatar, setAvatar] = useState("/images/avatar.png");
-  const [showCalendar, setShowCalendar] = useState(false);
+
+  const { data: userData, isLoading, error, refetch } = useGetMeQuery({});
+  const [updateMe, { isLoading: isUpdating }] = useUpdateMeMutation();
+  const [updateProfileImage] = useUpdateProfileImageMutation();
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      firstName: "Amanuel",
-      lastName: "Tesfaye",
-      email: "amanuel@gmail.com",
-      address: "Dhaka, Bangladesh",
-      contactNumber: "+880 123 456 789",
-      birthday: new Date("1998-05-15"),
-    },
   });
+
+  useEffect(() => {
+    if (userData) {
+      reset({
+        firstName: userData.first_name || "",
+        lastName: userData.last_name || "",
+        email: userData.email || "",
+        address: userData.address || "",
+        contactNumber: userData.contact_number || "",
+        birthday: userData.birthday ? new Date(userData.birthday) : undefined,
+        bio: userData.bio || "",
+      });
+      const profileImageUrl =
+        userData.profile_image?.replace(/^"|"$/g, "") || "/images/avatar.png";
+      setAvatar(profileImageUrl);
+    }
+  }, [userData, reset]);
 
   const birthday = watch("birthday");
 
   const onSubmit = async (data: ProfileFormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API
-    console.log("Profile updated:", data);
-    alert("Profile saved successfully!");
+    try {
+      await updateMe({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+        address: data.address,
+        contact_number: data.contactNumber,
+        birthday: data.birthday
+          ? data.birthday.toISOString().split("T")[0]
+          : null,
+        bio: data.bio,
+      }).unwrap();
+      await refetch();
+      showToast("Profile updated successfully!", "success");
+    } catch (err) {
+      console.error("Update failed:", err);
+      showToast("Failed to update profile. Please try again.", "error");
+    }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedTypes.includes(file.type)) {
+        showToast("Please upload only JPG, JPEG, or PNG image files.", "error");
+        e.target.value = ""; // Clear the input
+        return;
+      }
+
+      // Set local preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatar(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Upload to server
+      try {
+        const formData = new FormData();
+        formData.append("profile_image", file);
+        await updateProfileImage(formData).unwrap();
+        const result = await refetch(); // Refetch user data to get the updated profile_image URL
+        const profileImageUrl =
+          result.data?.profile_image?.replace(/^"|"$/g, "") ||
+          "/images/avatar.png";
+
+        console.log(profileImageUrl);
+
+        setAvatar(profileImageUrl); // Update to server URL
+        showToast("Profile image updated successfully!", "success");
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        showToast("Failed to upload image. Please try again.", "error");
+        // Revert to original
+        const profileImageUrl =
+          userData?.profile_image?.replace(/^"|"$/g, "") ||
+          "/images/avatar.png";
+        setAvatar(profileImageUrl);
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl 2xl:max-w-7xl mx-auto mb-10">
+        <div className="bg-white rounded-3xl shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8 relative inline-block before:absolute before:bottom-0 before:left-1 before:w-2/3 before:h-0.5 before:bg-[#5272FF]">
+            Account Information
+          </h1>
+          <div className="flex justify-center items-center py-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl 2xl:max-w-7xl mx-auto mb-10">
+        <div className="bg-white rounded-3xl shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8 relative inline-block before:absolute before:bottom-0 before:left-1 before:w-2/3 before:h-0.5 before:bg-[#5272FF]">
+            Account Information
+          </h1>
+          <div className="text-red-500 text-center py-10">
+            Failed to load profile data. Please try again.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl 2xl:max-w-7xl mx-auto mb-10">
@@ -77,7 +174,7 @@ export default function ProfilePage() {
                 />
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png"
                   className="hidden"
                   onChange={handleImageUpload}
                 />
@@ -88,7 +185,7 @@ export default function ProfilePage() {
               Upload New Photo
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png"
                 className="hidden"
                 onChange={handleImageUpload}
               />
@@ -149,15 +246,29 @@ export default function ProfilePage() {
 
             {/* Address & Contact Number */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Birthday */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Address
+                  Birthday
                 </label>
                 <input
-                  {...register("address")}
+                  type="date"
+                  value={birthday ? birthday.toISOString().split("T")[0] : ""}
+                  onChange={(e) => {
+                    const date = e.target.value
+                      ? new Date(e.target.value)
+                      : undefined;
+                    setValue("birthday", date);
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
+                {errors.birthday && (
+                  <p className="mt-1 text-red-600 text-sm">
+                    {errors.birthday.message}
+                  </p>
+                )}
               </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Contact Number
@@ -175,41 +286,38 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Birthday */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Birthday
+                Address
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  readOnly
-                  value={birthday ? formatDate(birthday) : ""}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white cursor-pointer focus:ring-2 focus:ring-blue-500"
-                  placeholder="Select your birthday"
-                  onClick={() => setShowCalendar(!showCalendar)}
-                />
-                <CalendarIcon className="absolute right-4 top-4 w-5 h-5 text-gray-400 pointer-events-none" />
-              </div>
-              {errors.birthday && (
-                <p className="mt-1 text-red-600 text-sm">
-                  {errors.birthday.message}
-                </p>
-              )}
+              <input
+                {...register("address")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Biography
+              </label>
+              <input
+                {...register("bio")}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              />
             </div>
 
             {/* Buttons */}
             <div className="flex justify-center gap-4 pt-6">
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="bg-[#5272FF] hover:bg-[#5286EF] w-[200px]! h-10 text-white font-semibold flex items-center justify-center px-8 py-3 rounded-xl transition disabled:opacity-70"
+                disabled={isSubmitting || isUpdating || !isDirty}
+                className="bg-[#5272FF] hover:bg-[#5286EF] w-[200px]! h-10 cursor-pointer text-white font-semibold flex items-center justify-center px-8 py-3 rounded-xl transition disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting || isUpdating ? "Saving..." : "Save Changes"}
               </button>
               <button
                 type="button"
-                className="bg-[#8CA3CD] hover:bg-gray-500 w-[200px]! h-10 text-white font-semibold px-8 py-3 rounded-xl transition flex items-center justify-center"
+                className="bg-[#8CA3CD] hover:bg-gray-500 w-[200px]! h-10 cursor-pointer text-white font-semibold px-8 py-3 rounded-xl transition flex items-center justify-center"
               >
                 Cancel
               </button>

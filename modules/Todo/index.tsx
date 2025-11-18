@@ -4,6 +4,7 @@ import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import Loader from "../../components/Loader";
+import { useToaster } from "../../components/Toaster";
 import {
   useCreateTodoMutation,
   useDeleteTodoMutation,
@@ -14,6 +15,7 @@ import AddTaskModal from "./AddTaskModal";
 import { NewTaskForm, PriorityColors, Task, TodoApiResponse } from "./types";
 
 export default function Todos() {
+  const { showToast } = useToaster();
   const { data: todos, isLoading, error, refetch } = useGetTodosQuery({});
   const [createTodo, { isLoading: isCreating }] = useCreateTodoMutation();
   const [updateTodo, { isLoading: isUpdating }] = useUpdateTodoMutation();
@@ -95,6 +97,7 @@ export default function Todos() {
             todo_date: new Date(newTask.date).toISOString().split("T")[0],
             priority: newTask.priority,
           });
+          showToast("Todo updated successfully!", "success");
         } else {
           // Create new
           await createTodo({
@@ -103,6 +106,7 @@ export default function Todos() {
             todo_date: new Date(newTask.date).toISOString().split("T")[0], // Assuming API expects date string
             priority: newTask.priority,
           });
+          showToast("Todo created successfully!", "success");
         }
         await refetch();
         setNewTask({
@@ -121,6 +125,7 @@ export default function Todos() {
         setEditingTaskId(null);
       } catch (error) {
         console.error("Failed to save todo:", error);
+        showToast("Failed to save todo. Please try again.", "error");
       }
     }
   };
@@ -129,8 +134,10 @@ export default function Todos() {
     try {
       await deleteTodo(id);
       await refetch();
+      showToast("Todo deleted successfully!", "success");
     } catch (error) {
       console.error("Failed to delete todo:", error);
+      showToast("Failed to delete todo. Please try again.", "error");
     }
   };
 

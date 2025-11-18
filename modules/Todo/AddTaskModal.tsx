@@ -1,35 +1,7 @@
 import { Trash2 } from "lucide-react";
 import Image from "next/image";
-import { forwardRef } from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { NewTaskForm, PriorityColors } from "./types";
 import Loader from "../../components/Loader";
-
-// Custom input component with calendar icon
-const CustomDateInput = forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->((props, ref) => (
-  <div className="relative w-full">
-    <input
-      {...props}
-      ref={ref}
-      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    />
-    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-      <Image
-        src="/icons/cal-icon.svg"
-        alt="Calendar"
-        width={36}
-        height={36}
-        className="pointer-events-none"
-      />
-    </div>
-  </div>
-));
-
-CustomDateInput.displayName = "CustomDateInput";
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -93,17 +65,17 @@ export default function AddTaskModal({
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Date
             </label>
-            <DatePicker
-              selected={newTask.date ? new Date(newTask.date) : null}
-              onChange={(date) =>
-                setNewTask({
-                  ...newTask,
-                  date: date ? date.toISOString().split("T")[0] : "",
-                })
-              }
-              dateFormat="yyyy-MM-dd"
-              customInput={<CustomDateInput placeholder="Select a date" />}
-            />
+            <div className="relative w-full">
+              <input
+                type="date"
+                value={newTask.date}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, date: e.target.value })
+                }
+                placeholder="Select a date"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 [&::-webkit-calendar-picker-indicator]:display-none"
+              />
+            </div>
             {errors.date && (
               <span className="text-red-500 text-sm">{errors.date}</span>
             )}

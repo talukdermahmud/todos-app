@@ -15,7 +15,8 @@ export const profileSchema = z.object({
     .min(10, "Contact number too short")
     .optional()
     .or(z.literal("")),
-  birthday: z.date({ message: "Please select your birthday" }),
+  birthday: z.date({ message: "Please select your birthday" }).optional(),
+  bio: z.string().optional().or(z.literal("")),
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;

@@ -29,6 +29,34 @@ export const api = createApi({
       }),
     }),
 
+    getMe: build.query({
+      query: () => ({ url: "/users/me/" }),
+    }),
+
+    updateMe: build.mutation({
+      query: (userData) => ({
+        url: "/users/me/",
+        method: "PATCH",
+        body: userData,
+      }),
+    }),
+
+    updateProfileImage: build.mutation({
+      query: (formData) => ({
+        url: "/users/me/",
+        method: "PATCH",
+        body: formData,
+      }),
+    }),
+
+    changePassword: build.mutation({
+      query: (passwords) => ({
+        url: "/users/change-password/",
+        method: "POST",
+        body: passwords,
+      }),
+    }),
+
     getTodos: build.query<
       PaginatedTodosResponse,
       Record<string, string | number | undefined>
@@ -70,6 +98,10 @@ export const api = createApi({
 export const {
   useSignupMutation,
   useLoginMutation,
+  useGetMeQuery,
+  useUpdateMeMutation,
+  useUpdateProfileImageMutation,
+  useChangePasswordMutation,
   useGetTodosQuery,
   useCreateTodoMutation,
   useUpdateTodoMutation,
