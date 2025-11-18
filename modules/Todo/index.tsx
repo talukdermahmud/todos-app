@@ -156,7 +156,7 @@ export default function Todos() {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 p-8">
+    <div className="min-h-screen p-8">
       <div className="mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
