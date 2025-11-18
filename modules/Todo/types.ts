@@ -25,21 +25,24 @@ export type { TodoApiResponse, PaginatedTodosResponse };
 
 export const PriorityColors: Record<
   Priority,
-  { bg: string; badge: string; dot: string }
+  { bg: string; badge: string; dot: string; border?: string }
 > = {
   extreme: {
     bg: "bg-red-50",
-    badge: "bg-red-100 text-red-700",
+    badge: "bg-[#FEE2E2] text-red-700",
     dot: "bg-red-500",
+    border: "border-red-500/15",
   },
   moderate: {
     bg: "bg-green-50",
-    badge: "bg-green-100 text-green-700",
+    badge: "bg-[#DCFCE7] text-green-700",
     dot: "bg-green-500",
+    border: "border-green-500/15",
   },
   low: {
     bg: "bg-yellow-50",
-    badge: "bg-yellow-100 text-yellow-700",
+    badge: "bg-[#FEF9C3] text-yellow-700",
     dot: "bg-yellow-500",
+    border: "border-yellow-500/15",
   },
 };

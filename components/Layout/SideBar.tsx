@@ -22,7 +22,7 @@ export default function Sidebar() {
     {
       href: "/password-change",
       label: "Password Change",
-      icon: "/icons/user.png",
+      icon: "/icons/lock.png",
     },
   ];
 

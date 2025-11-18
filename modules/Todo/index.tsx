@@ -1,14 +1,14 @@
 "use client";
 
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Plus, Search } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Loader from "../../components/Loader";
 import { useToaster } from "../../components/Toaster";
 import {
   useCreateTodoMutation,
   useDeleteTodoMutation,
-  useGetTodosQuery,
+  useLazyGetTodosQuery,
   useUpdateTodoMutation,
 } from "../../lib/api";
 import AddTaskModal from "./AddTaskModal";
@@ -16,7 +16,8 @@ import { NewTaskForm, PriorityColors, Task, TodoApiResponse } from "./types";
 
 export default function Todos() {
   const { showToast } = useToaster();
-  const { data: todos, isLoading, error, refetch } = useGetTodosQuery({});
+  const [triggerGetTodos, { data: todos, isLoading, error }] =
+    useLazyGetTodosQuery();
   const [createTodo, { isLoading: isCreating }] = useCreateTodoMutation();
   const [updateTodo, { isLoading: isUpdating }] = useUpdateTodoMutation();
   const [deleteTodo, { isLoading: isDeleting }] = useDeleteTodoMutation();
@@ -24,6 +25,7 @@ export default function Todos() {
   const [showModal, setShowModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const getTodayDateString = () => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -46,6 +48,17 @@ export default function Todos() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
 
+  useEffect(() => {
+    triggerGetTodos({});
+  }, []);
+
+  const handleSearch = async () => {
+    await triggerGetTodos(searchQuery ? { search: searchQuery } : {});
+    if (searchQuery.trim()) {
+      showToast("Search completed", "success");
+    }
+  };
+
   const tasks: Task[] = todos?.results
     ? todos.results.map((todo: TodoApiResponse) => ({
         id: todo.id,
@@ -55,6 +68,37 @@ export default function Todos() {
         priority: todo.priority,
       }))
     : [];
+
+  const filteredTasks = tasks.filter((task) => {
+    if (selectedFilters.length === 0) return true;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const taskDate = new Date(task.dueDate);
+    taskDate.setHours(0, 0, 0, 0);
+
+    return selectedFilters.some((filter) => {
+      if (filter === "Deadline Today") {
+        return taskDate.getTime() === today.getTime();
+      }
+      if (filter === "Expires in 5 days") {
+        const limit = new Date(today);
+        limit.setDate(today.getDate() + 5);
+        return taskDate <= limit;
+      }
+      if (filter === "Expires in 10 days") {
+        const limit = new Date(today);
+        limit.setDate(today.getDate() + 10);
+        return taskDate <= limit;
+      }
+      if (filter === "Expires in 30 days") {
+        const limit = new Date(today);
+        limit.setDate(today.getDate() + 30);
+        return taskDate <= limit;
+      }
+      return false;
+    });
+  });
 
   const validateForm = () => {
     const newErrors = {
@@ -116,7 +160,7 @@ export default function Todos() {
           });
           showToast("Todo created successfully!", "success");
         }
-        await refetch();
+        await triggerGetTodos(searchQuery ? { search: searchQuery } : {});
         setNewTask({
           title: "",
           date: getTodayDateString(),
@@ -141,19 +185,13 @@ export default function Todos() {
   const handleDeleteTask = async (id: number) => {
     try {
       await deleteTodo(id);
-      await refetch();
+      await triggerGetTodos(searchQuery ? { search: searchQuery } : {});
       showToast("Todo deleted successfully!", "success");
     } catch (error) {
       console.error("Failed to delete todo:", error);
       showToast("Failed to delete todo. Please try again.", "error");
     }
   };
-
-  const filteredTasks = tasks.filter(
-    (task) =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen p-8">
@@ -186,57 +224,83 @@ export default function Todos() {
               placeholder="Search your task here..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearch();
+                }
+              }}
               className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             />
-            <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-[#5272FF] text-white p-2 rounded-lg hover:bg-[#5242FF]">
+            <button
+              onClick={handleSearch}
+              className="absolute cursor-pointer right-0 top-1/2 -translate-y-1/2 bg-[#5272FF] text-white p-2 rounded-lg hover:bg-[#5242FF]"
+            >
               <Search size={30} />
             </button>
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-6 py-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 transition-colors"
-          >
-            {showFilters ? "Sort by" : "Filter By"}
-            <SlidersHorizontal size={20} />
-          </button>
-        </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-6 py-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 transition-colors"
+            >
+              {showFilters ? "Filter By" : "Sort by"}
+              <ArrowUpDown size={20} />
+            </button>
 
-        {/* Filter Dropdown */}
-        {showFilters && (
-          <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
-            <h3 className="font-semibold mb-3">Date</h3>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <span>Deadline Today</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <span>Expires in 5 days</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <span>Expires in 10 days</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <span>Expires in 30 days</span>
-              </label>
-            </div>
+            {/* Filter Dropdown - Pixel Perfect Match */}
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-50">
+                <div className="p-2 px-4">
+                  {/* Header */}
+                  <div className="py-2 border-b border-gray-200 mb-2">
+                    <h3 className="font-semibold text-gray-800">Date</h3>
+                  </div>
+
+                  {/* Options */}
+                  <div className="">
+                    {[
+                      "Deadline Today",
+                      "Expires in 5 days",
+                      "Expires in 10 days",
+                      "Expires in 30 days",
+                    ].map((label) => (
+                      <label
+                        key={label}
+                        className="flex items-start gap-3 cursor-pointer hover:bg-gray-50 pt-2 rounded-lg transition"
+                      >
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={selectedFilters.includes(label)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedFilters((prev) => [...prev, label]);
+                              } else {
+                                setSelectedFilters((prev) =>
+                                  prev.filter((f) => f !== label)
+                                );
+                              }
+                            }}
+                            className="w-5 h-5 rounded border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 appearance-none checked:bg-blue-600 checked:border-blue-600"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.707 7.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4a1 1 0 0 0-1.414-1.414L7 8.586 5.707 7.293z'/%3e%3c/svg%3e")`,
+                              backgroundSize: "contain",
+                              backgroundRepeat: "no-repeat",
+                              backgroundPosition: "center",
+                            }}
+                          />
+                        </div>
+                        <span className="text-gray-700 text-sm font-medium">
+                          {label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Tasks Display */}
         {isLoading ? (
@@ -269,10 +333,12 @@ export default function Todos() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Your Tasks</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTasks.map((task) => (
+              {filteredTasks.map((task: Task) => (
                 <div
                   key={task.id}
-                  className={`bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-100`}
+                  className={`bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-100 ${
+                    PriorityColors[task.priority].border
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-lg font-semibold text-gray-800 flex-1">
