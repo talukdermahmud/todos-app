@@ -2,18 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn, getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address."),
-  password: z.string().min(4, "Password must be at least 4 characters."),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { loginSchema, LoginFormData } from "../../../lib/schemas";
+import { useToaster } from "../../../components/Toaster";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { showToast } = useToaster();
+
   const {
     register,
     handleSubmit,
@@ -24,10 +23,21 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    // Replace with real API from Postman collection
-    console.log("Login:", data);
-    // const res = await fetch("https://todo-app.pioneeralpha.com/api/users/login", { ... })
-    // Save token → redirect to /todos
+    const result = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+
+    if (result?.ok) {
+      const session = await getSession();
+      if (session?.user?.accessToken) {
+        localStorage.setItem("token", session.user.accessToken);
+      }
+      router.push("/dashboard");
+    } else {
+      showToast("Login failed: " + (result?.error || "Unknown error"), "error");
+    }
   };
 
   return (

@@ -1,31 +1,34 @@
 # Dreamy Software Todo App
 
-A modern, full-stack todo application built with Next.js, featuring user authentication, task management, and a responsive UI.
+A modern, full-stack todo application built with Next.js, featuring user authentication, task management, dashboard analytics, and a responsive UI.
 
 ## Overview
 
-This application allows users to create, manage, and organize their todos with features like drag-and-drop reordering, user authentication, and profile management. It utilizes Next.js for the frontend and backend API routes, with state management powered by Redux Toolkit and TanStack React Query.
+This application allows users to create, manage, and organize their todos with features like search, filtering by due dates, priority management, and dashboard analytics. It utilizes Next.js for both the frontend and backend API routes, with state management powered by Redux Toolkit and TanStack React Query.
 
 ## Features
 
 - **User Authentication**: Secure login and signup pages with NextAuth.js integration
-- **Dashboard**: Central hub for accessing todos and user information
+- **Dashboard**: Central hub with analytics showing total tasks and priority breakdowns via pie chart
 - **Profile Management**: Update user profile details
-- **Todo Management**: Create, read, update, and delete todos
+- **Password Change**: Change password functionality in protected routes
+- **Todo Management**: Create, edit, update, and delete todos with priorities (low, moderate, extreme)
 - **Drag and Drop**: Reorder tasks using @dnd-kit for an intuitive experience
+- **Search and Filters**: Search tasks by title and filter by deadline (today, 5 days, 10 days, 30 days)
+- **Form Validation**: Robust client-side validation using Zod and React Hook Form
 - **Responsive Design**: Built with Tailwind CSS for mobile-first design
-- **Form Validation**: Robust validation using Zod and React Hook Form
 - **State Management**: Efficient state handling with Redux Toolkit and React Query
+- **Loading States**: Smooth user experience with loading indicators and toast notifications
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16, React 19, TypeScript
-- **Styling**: Tailwind CSS 4, Lucide React for icons
+- **Styling**: Tailwind CSS 4, Lucide React for icons, Tailwind CSS Animate
 - **State Management**: Redux Toolkit, TanStack React Query
 - **Authentication**: NextAuth.js
 - **Forms**: React Hook Form with Zod validation
-- **Drag & Drop**: @dnd-kit
-- **Linting**: ESLint
+- **Charts**: Recharts for dashboard visualization
+- **Linting**: ESLint with Next.js config
 
 ## Installation
 
@@ -43,12 +46,12 @@ This application allows users to create, manage, and organize their todos with f
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file in the root directory and configure necessary environment variables (e.g., for NextAuth, database connections if used).
+   Create a `.env.local` file in the root directory and configure necessary environment variables for NextAuth and any database connections if applicable.
 
 4. Run the development server:
 
    ```bash
-   npm run dev
+   npm run dev --turbo -p 4050
    ```
 
 5. Open [http://localhost:4050](http://localhost:4050) in your browser.
@@ -56,9 +59,10 @@ This application allows users to create, manage, and organize their todos with f
 ## Usage
 
 - **Registration/Login**: Create an account or log in to access the application.
-- **Dashboard**: View your todos and quick access to profile.
-- **Todos**: Add new tasks, edit existing ones, mark as complete, and reorder via drag and drop.
+- **Dashboard**: View task statistics and priority distribution in a pie chart.
+- **Todos**: Add new tasks with title, description, priority, and due date; search and filter tasks; edit or delete existing tasks.
 - **Profile**: Update your personal information.
+- **Password Change**: Securely change your account password.
 
 ## Project Structure
 
@@ -68,12 +72,24 @@ todos-app/
 │   ├── (auth)/                    # Auth pages (login, signup)
 │   ├── (protected)/               # Protected routes (dashboard, profile, todos)
 │   ├── api/                       # API routes (auth, users)
-│   └── globals.css                # Global styles
+│   ├── globals.css                # Global styles
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Home page (redirects to login)
+│   └── middleware.ts              # Authentication middleware
 ├── components/                    # Reusable React components
 │   ├── Layout/                    # Layout components (Header, SideBar)
-│   └── Providers.tsx              # Context and provider setup
+│   ├── Loader.tsx                 # Loading component
+│   ├── Providers.tsx              # React Query and Redux providers
+│   └── Toaster.tsx                # Toast notifications
 ├── lib/                           # Utility libraries and configurations
+│   ├── api.ts                     # RTK Query setup
+│   ├── auth.ts                    # NextAuth configuration
+│   ├── store.ts                   # Redux store
+│   └── schemas.ts                 # Zod schemas
 ├── modules/                       # Page-specific modules
+│   ├── Dashboard/                 # Dashboard module with charts
+│   ├── Profile/                   # Profile and password change
+│   └── Todo/                      # Todo list management
 ├── public/                        # Static assets (icons, images)
 └── utils/                         # Utility functions
 ```
@@ -87,12 +103,4 @@ npm run build
 npm run start
 ```
 
-The application is designed to be deployed on Vercel, which integrates seamlessly with Next.js projects.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is private and not licensed for public use.
+The application is designed to be deployed on Vercel or other platforms that support Next.js.

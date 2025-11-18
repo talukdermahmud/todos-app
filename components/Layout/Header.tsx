@@ -14,8 +14,8 @@ export default function Header() {
   });
 
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4">
-      <div className="flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200 px-6 py-4 h-[88px]">
+      <div className="flex items-center justify-between px-12">
         <Image
           src="/images/logo.png"
           width={105}

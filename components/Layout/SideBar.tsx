@@ -5,33 +5,44 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useGetMeQuery } from "../../lib/api";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: userData, isLoading } = useGetMeQuery({});
 
   const user = {
-    name: "amanuel",
-    email: "amanuel@gmail.com",
-    avatar: "/images/avatar.png",
+    name: userData
+      ? `${userData.first_name || ""} ${userData.last_name || ""}`.trim() ||
+        "User"
+      : "Loading...",
+    email: userData?.email || "user@example.com",
+    avatar:
+      userData?.profile_image?.replace(/^"|"$/g, "") || "/images/avatar.png",
   };
 
   const navItems = [
-    // { href: "/dashboard", label: "Dashboard", icon: "/icons/home.png" },
+    { href: "/dashboard", label: "Dashboard", icon: "/icons/home.png" },
     { href: "/todos", label: "Todos", icon: "/icons/task.png" },
     { href: "/profile", label: "Account Information", icon: "/icons/user.png" },
+    {
+      href: "/password-change",
+      label: "Password Change",
+      icon: "/icons/lock.png",
+    },
   ];
 
   return (
     <aside className="w-80 bg-[#0D224A] flex flex-col items-center py-10 text-white">
       {/* User Avatar + Info */}
       <div className="mb-16 text-center">
-        <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-white/20">
+        <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-white/20 mx-auto flex items-center justify-center">
           <Image
             src={user.avatar}
             alt={user.name}
             width={112}
             height={112}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
         </div>
         <p className="mt-6 text-xl font-semibold">{user.name}</p>
@@ -82,7 +93,10 @@ export default function Sidebar() {
       {/* Logout */}
       <div className="w-full mt-auto">
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => {
+            localStorage.removeItem("token");
+            signOut({ callbackUrl: "/login" });
+          }}
           className="flex items-center gap-5 px-10 py-4 text-gray-400 hover:text-white hover:bg-white/5 transition-all w-full"
         >
           <Image
@@ -90,7 +104,7 @@ export default function Sidebar() {
             alt="Logout"
             width={24}
             height={24}
-            className="w-6 h-6 rotate-180"
+            className="w-6 h-6"
           />
           <span className="text-lg font-medium">Logout</span>
         </button>

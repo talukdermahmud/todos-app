@@ -2,6 +2,30 @@ import NextAuth, { Session, User } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+declare module "next-auth" {
+  interface User {
+    accessToken?: string;
+    refreshToken?: string;
+  }
+  interface Session {
+    user: {
+      id?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      accessToken?: string;
+      refreshToken?: string;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+    refreshToken?: string;
+  }
+}
+
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -31,11 +55,15 @@ export const authOptions = {
             return null;
           }
 
-          const user = await res.json();
+          const data = await res.json();
+          // Since API only returns tokens, use credentials for user info
+          // In production, you might want to decode JWT or fetch user data
           return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
+            id: credentials?.email || "",
+            name: credentials?.email || "",
+            email: credentials?.email || "",
+            accessToken: data.access,
+            refreshToken: data.refresh,
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -51,12 +79,16 @@ export const authOptions = {
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.id = user.id;
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
       }
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.accessToken = token.accessToken;
+        session.user.refreshToken = token.refreshToken;
       }
       return session;
     },
