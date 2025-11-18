@@ -95,7 +95,7 @@ export default function Sidebar() {
             alt="Logout"
             width={24}
             height={24}
-            className="w-6 h-6 rotate-180"
+            className="w-6 h-6"
           />
           <span className="text-lg font-medium">Logout</span>
         </button>
