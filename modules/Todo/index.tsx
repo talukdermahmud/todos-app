@@ -24,9 +24,17 @@ export default function Todos() {
   const [showModal, setShowModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const getTodayDateString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const [newTask, setNewTask] = useState<NewTaskForm>({
     title: "",
-    date: "",
+    date: getTodayDateString(),
     priority: "moderate",
     description: "",
   });
@@ -111,7 +119,7 @@ export default function Todos() {
         await refetch();
         setNewTask({
           title: "",
-          date: "",
+          date: getTodayDateString(),
           priority: "moderate",
           description: "",
         });
@@ -343,7 +351,7 @@ export default function Todos() {
             setEditingTaskId(null);
             setNewTask({
               title: "",
-              date: "",
+              date: getTodayDateString(),
               priority: "moderate",
               description: "",
             });

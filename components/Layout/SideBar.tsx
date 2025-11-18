@@ -16,9 +16,14 @@ export default function Sidebar() {
   };
 
   const navItems = [
-    // { href: "/dashboard", label: "Dashboard", icon: "/icons/home.png" },
+    { href: "/dashboard", label: "Dashboard", icon: "/icons/home.png" },
     { href: "/todos", label: "Todos", icon: "/icons/task.png" },
     { href: "/profile", label: "Account Information", icon: "/icons/user.png" },
+    {
+      href: "/password-change",
+      label: "Password Change",
+      icon: "/icons/user.png",
+    },
   ];
 
   return (

@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (session?.user?.accessToken) {
         localStorage.setItem("token", session.user.accessToken);
       }
-      router.push("/todos");
+      router.push("/dashboard");
     } else {
       alert("Login failed: " + (result?.error || "Unknown error"));
     }
