@@ -81,7 +81,7 @@ export default function ProfilePage() {
       const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedTypes.includes(file.type)) {
         showToast("Please upload only JPG, JPEG, or PNG image files.", "error");
-        e.target.value = ""; // Clear the input
+        e.target.value = "";
         return;
       }
 
@@ -97,7 +97,7 @@ export default function ProfilePage() {
         const formData = new FormData();
         formData.append("profile_image", file);
         await updateProfileImage(formData).unwrap();
-        const result = await refetch(); // Refetch user data to get the updated profile_image URL
+        const result = await refetch();
         const profileImageUrl =
           result.data?.profile_image?.replace(/^"|"$/g, "") ||
           "/images/avatar.png";
@@ -109,7 +109,7 @@ export default function ProfilePage() {
       } catch (err) {
         console.error("Image upload failed:", err);
         showToast("Failed to upload image. Please try again.", "error");
-        // Revert to original
+        // Revert to previous image on failure
         const profileImageUrl =
           userData?.profile_image?.replace(/^"|"$/g, "") ||
           "/images/avatar.png";

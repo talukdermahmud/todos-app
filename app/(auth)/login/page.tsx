@@ -7,9 +7,11 @@ import { signIn, getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "../../../lib/schemas";
+import { useToaster } from "../../../components/Toaster";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { showToast } = useToaster();
 
   const {
     register,
@@ -28,14 +30,13 @@ export default function LoginPage() {
     });
 
     if (result?.ok) {
-      // Retrieve the session to get tokens and store accessToken for RTK Query
       const session = await getSession();
       if (session?.user?.accessToken) {
         localStorage.setItem("token", session.user.accessToken);
       }
       router.push("/dashboard");
     } else {
-      alert("Login failed: " + (result?.error || "Unknown error"));
+      showToast("Login failed: " + (result?.error || "Unknown error"), "error");
     }
   };
 

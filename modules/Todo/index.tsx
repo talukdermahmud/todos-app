@@ -130,7 +130,7 @@ export default function Todos() {
     setEditingTaskId(task.id);
     setNewTask({
       title: task.title,
-      date: task.dueDate, // Assuming dueDate is the date string
+      date: task.dueDate,
       priority: task.priority,
       description: task.description,
     });
@@ -151,11 +151,11 @@ export default function Todos() {
           });
           showToast("Todo updated successfully!", "success");
         } else {
-          // Create new
+          // Create
           await createTodo({
             title: newTask.title,
             description: newTask.description,
-            todo_date: new Date(newTask.date).toISOString().split("T")[0], // Assuming API expects date string
+            todo_date: new Date(newTask.date).toISOString().split("T")[0],
             priority: newTask.priority,
           });
           showToast("Todo created successfully!", "success");
@@ -247,7 +247,7 @@ export default function Todos() {
               <ArrowUpDown size={20} />
             </button>
 
-            {/* Filter Dropdown - Pixel Perfect Match */}
+            {/* Filter Dropdown */}
             {showFilters && (
               <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-50">
                 <div className="p-2 px-4">

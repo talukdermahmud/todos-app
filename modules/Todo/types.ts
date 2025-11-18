@@ -1,4 +1,3 @@
-// These are moved to lib/types.ts for API types
 import type {
   Priority,
   TodoApiResponse,
@@ -20,7 +19,6 @@ export interface NewTaskForm {
   description: string;
 }
 
-// Re-export for convenience
 export type { TodoApiResponse, PaginatedTodosResponse };
 
 export const PriorityColors: Record<
