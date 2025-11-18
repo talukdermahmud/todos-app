@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -15,6 +16,7 @@ import { useToaster } from "../../components/Toaster";
 
 export default function ProfilePage() {
   const { showToast } = useToaster();
+  const router = useRouter();
   const [avatar, setAvatar] = useState("/images/avatar.png");
 
   const { data: userData, isLoading, error, refetch } = useGetMeQuery({});
@@ -317,6 +319,7 @@ export default function ProfilePage() {
               </button>
               <button
                 type="button"
+                onClick={() => router.push("/dashboard")}
                 className="bg-[#8CA3CD] hover:bg-gray-500 w-[200px]! h-10 cursor-pointer text-white font-semibold px-8 py-3 rounded-xl transition flex items-center justify-center"
               >
                 Cancel
