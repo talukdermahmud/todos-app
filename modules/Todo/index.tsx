@@ -1,8 +1,25 @@
 "use client";
 
-import { ArrowUpDown, Plus, Search } from "lucide-react";
+import { ArrowUpDown, Plus, Search, GripVertical } from "lucide-react";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Loader from "../../components/Loader";
 import { useToaster } from "../../components/Toaster";
 import {
@@ -47,10 +64,109 @@ export default function Todos() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [orderedTasks, setOrderedTasks] = useState<Task[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     triggerGetTodos({});
   }, []);
+
+  const tasks = useMemo(
+    () =>
+      todos?.results
+        ? todos.results.map((todo: TodoApiResponse) => ({
+            id: todo.id,
+            title: todo.title,
+            description: todo.description,
+            dueDate: todo.todo_date,
+            priority: todo.priority,
+          }))
+        : [],
+    [todos]
+  );
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (selectedFilters.length === 0) return true;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const taskDate = new Date(task.dueDate);
+      taskDate.setHours(0, 0, 0, 0);
+
+      return selectedFilters.some((filter) => {
+        if (filter === "Deadline Today") {
+          return taskDate.getTime() === today.getTime();
+        }
+        if (filter === "Expires in 5 days") {
+          const limit = new Date(today);
+          limit.setDate(today.getDate() + 5);
+          return taskDate <= limit;
+        }
+        if (filter === "Expires in 10 days") {
+          const limit = new Date(today);
+          limit.setDate(today.getDate() + 10);
+          return taskDate <= limit;
+        }
+        if (filter === "Expires in 30 days") {
+          const limit = new Date(today);
+          limit.setDate(today.getDate() + 30);
+          return taskDate <= limit;
+        }
+        return false;
+      });
+    });
+  }, [tasks, selectedFilters]);
+
+  useEffect(() => {
+    setOrderedTasks(filteredTasks);
+  }, [filteredTasks]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+    const oldIndex = orderedTasks.findIndex(
+      (item) => item.id.toString() === active.id
+    );
+    const newIndex = orderedTasks.findIndex(
+      (item) => item.id.toString() === over.id
+    );
+
+    const newOrderedTasks = arrayMove(orderedTasks, oldIndex, newIndex);
+    setOrderedTasks(newOrderedTasks);
+
+    // Update position in API
+    const draggedTaskId = parseInt(active.id.toString());
+    const draggedTask = orderedTasks.find((t) => t.id === draggedTaskId);
+    if (draggedTask) {
+      updateTodo({
+        id: draggedTaskId,
+        title: draggedTask.title,
+        description: draggedTask.description,
+        todo_date: draggedTask.dueDate,
+        priority: draggedTask.priority,
+        position: newIndex,
+      })
+        .unwrap()
+        .then(() => {
+          showToast("Todo position updated!", "success");
+        })
+        .catch((error) => {
+          console.error("Failed to update position:", error);
+          showToast("Failed to update position.", "error");
+          setOrderedTasks(filteredTasks);
+        });
+    }
+  };
 
   const handleSearch = async () => {
     await triggerGetTodos(searchQuery ? { search: searchQuery } : {});
@@ -58,47 +174,6 @@ export default function Todos() {
       showToast("Search completed", "success");
     }
   };
-
-  const tasks: Task[] = todos?.results
-    ? todos.results.map((todo: TodoApiResponse) => ({
-        id: todo.id,
-        title: todo.title,
-        description: todo.description,
-        dueDate: todo.todo_date,
-        priority: todo.priority,
-      }))
-    : [];
-
-  const filteredTasks = tasks.filter((task) => {
-    if (selectedFilters.length === 0) return true;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const taskDate = new Date(task.dueDate);
-    taskDate.setHours(0, 0, 0, 0);
-
-    return selectedFilters.some((filter) => {
-      if (filter === "Deadline Today") {
-        return taskDate.getTime() === today.getTime();
-      }
-      if (filter === "Expires in 5 days") {
-        const limit = new Date(today);
-        limit.setDate(today.getDate() + 5);
-        return taskDate <= limit;
-      }
-      if (filter === "Expires in 10 days") {
-        const limit = new Date(today);
-        limit.setDate(today.getDate() + 10);
-        return taskDate <= limit;
-      }
-      if (filter === "Expires in 30 days") {
-        const limit = new Date(today);
-        limit.setDate(today.getDate() + 30);
-        return taskDate <= limit;
-      }
-      return false;
-    });
-  });
 
   const validateForm = () => {
     const newErrors = {
@@ -191,6 +266,92 @@ export default function Todos() {
       console.error("Failed to delete todo:", error);
       showToast("Failed to delete todo. Please try again.", "error");
     }
+  };
+
+  const SortableTask = ({ task }: { task: Task }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: task.id.toString() });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div ref={setNodeRef} style={style} className="relative">
+        <div
+          className={`bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-100 ${
+            PriorityColors[task.priority].border
+          } pl-12`}
+        >
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 flex-1">
+              {task.title}
+            </h3>
+            <div className="flex items-center">
+              <div
+                className={`${
+                  PriorityColors[task.priority].badge
+                } px-3 py-1 rounded-md text-sm font-medium flex items-center gap-1 `}
+              >
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+              </div>
+              <div
+                {...listeners}
+                {...attributes}
+                className="cursor-grab active:cursor-grabbing p-2 text-gray-400 hover:text-gray-600 z-10"
+              >
+                <GripVertical size={20} />
+              </div>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+            {task.description}
+          </p>
+          <div className="flex justify-between items-center pt-4">
+            <span className="text-sm text-gray-500 flex items-center gap-1">
+              Due {task.dueDate}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleEditTask(task)}
+                className="cursor-pointer "
+              >
+                <Image
+                  src="/icons/edit.svg"
+                  alt="Edit"
+                  width={32}
+                  height={32}
+                />
+              </button>
+              <button
+                onClick={() => handleDeleteTask(task.id)}
+                className="cursor-pointer"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader size="sm" />
+                ) : (
+                  <Image
+                    src="/icons/delete.svg"
+                    alt="Delete"
+                    width={32}
+                    height={32}
+                  />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -332,80 +493,22 @@ export default function Todos() {
         ) : (
           <div>
             <h2 className="text-xl font-semibold mb-4">Your Tasks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTasks.map((task: Task) => (
-                <div
-                  key={task.id}
-                  className={`bg-white rounded-lg p-6 shadow-md hover:shadow-xl transition-shadow border border-gray-100 ${
-                    PriorityColors[task.priority].border
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 flex-1">
-                      {task.title}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`${
-                          PriorityColors[task.priority].badge
-                        } px-3 py-1 rounded-md text-sm font-medium flex items-center gap-1 `}
-                      >
-                        {task.priority.charAt(0).toUpperCase() +
-                          task.priority.slice(1)}
-                      </div>
-                      <button className="text-gray-400 hover:text-gray-600  ">
-                        <Image
-                          src="/icons/list-icon.svg"
-                          alt="List"
-                          width={14}
-                          height={9}
-                          className="w-4 h-3"
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                    {task.description}
-                  </p>
-
-                  <div className="flex justify-between items-center pt-4">
-                    <span className="text-sm text-gray-500 flex items-center gap-1">
-                      Due {task.dueDate}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEditTask(task)}
-                        className="cursor-pointer "
-                      >
-                        <Image
-                          src="/icons/edit.svg"
-                          alt="Edit"
-                          width={32}
-                          height={32}
-                        />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="cursor-pointer"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <Loader size="sm" />
-                        ) : (
-                          <Image
-                            src="/icons/delete.svg"
-                            alt="Delete"
-                            width={32}
-                            height={32}
-                          />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={orderedTasks.map((t) => t.id.toString())}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="grid grid-cols-3 gap-4">
+                  {orderedTasks.map((task) => (
+                    <SortableTask key={task.id} task={task} />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
