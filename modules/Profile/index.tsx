@@ -1,12 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Calendar as CalendarIcon, Upload } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar as CalendarIcon, Upload, Camera } from "lucide-react";
-import Image from "next/image";
+import { ProfileFormData, profileSchema } from "../../lib/userSchemas";
 import formatDate from "../../utils/DateFormater";
-import { profileSchema, ProfileFormData } from "../../lib/userSchemas";
 
 export default function ProfilePage() {
   const [avatar, setAvatar] = useState("/images/avatar.png");

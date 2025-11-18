@@ -2,11 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, SignupFormData } from "../../../lib/schemas";
+import { useSignupMutation } from "../../../lib/api";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const [signup] = useSignupMutation();
+
   const {
     register,
     handleSubmit,
@@ -17,9 +22,18 @@ export default function SignupPage() {
   });
 
   const onSubmit = async (data: SignupFormData) => {
-    console.log("Signup success:", data);
-    alert("Account created! Redirecting...");
-    // window.location.href = "/login";
+    try {
+      const result = await signup({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+        password: data.password,
+      }).unwrap();
+      alert("Account created! Redirecting...");
+      router.push("/login");
+    } catch (error: any) {
+      alert(error?.data?.error || "Signup failed");
+    }
   };
 
   return (

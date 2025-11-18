@@ -1,5 +1,5 @@
-import React from "react";
+import Todos from "../../../modules/Todo";
 
 export default function TodosPage() {
-  return <div>Todos page</div>;
+  return <Todos />;
 }
