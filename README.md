@@ -56,6 +56,8 @@ This application allows users to create, manage, and organize their todos with f
 
 5. Open [http://localhost:4050](http://localhost:4050) in your browser.
 
+For the **deployed version**, visit: [**https://todos-app-sepia-gamma.vercel.app/**](https://todos-app-sepia-gamma.vercel.app/)
+
 ## Usage
 
 - **Registration/Login**: Create an account or log in to access the application.
