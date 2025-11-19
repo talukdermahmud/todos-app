@@ -154,7 +154,7 @@ export default function Todos() {
         description: draggedTask.description,
         todo_date: draggedTask.dueDate,
         priority: draggedTask.priority,
-        position: newIndex,
+        position: newIndex + 1,
       })
         .unwrap()
         .then(() => {
