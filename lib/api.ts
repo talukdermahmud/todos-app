@@ -1,18 +1,32 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { signOut } from "next-auth/react";
 import { PaginatedTodosResponse } from "./types";
 
+const baseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE,
+  timeout: 10000, // 10 seconds timeout
+  prepareHeaders: (headers, { getState }) => {
+    // Add auth token if available
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (token) headers.set("authorization", `Bearer ${token}`);
+    return headers;
+  },
+});
+
+const baseQueryWithReAuth = async (args: any, api: any, extraOptions: any) => {
+  const result = await baseQuery(args, api, extraOptions);
+
+  if (result.error && result.error.status === 401) {
+    localStorage.removeItem("token");
+    signOut({ callbackUrl: "/login" });
+  }
+
+  return result;
+};
+
 export const api = createApi({
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE,
-    timeout: 10000, // 10 seconds timeout
-    prepareHeaders: (headers, { getState }) => {
-      // Add auth token if available
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      if (token) headers.set("authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReAuth,
   endpoints: (build) => ({
     signup: build.mutation({
       query: (credentials) => ({
