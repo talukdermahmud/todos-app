@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 const COLORS = {
   extreme: "#00008B",
   moderate: "#4169E1",
-  low: "#87CEEB",
+  low: "#078EEB",
 };
 
 export default function Dashboard() {
